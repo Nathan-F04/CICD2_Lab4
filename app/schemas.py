@@ -5,3 +5,4 @@ class User(BaseModel):
     name: constr(min_length=2, max_length=50)
     email: EmailStr
     age: conint(gt=18)
+    student_id: constr(min_length=7, max_length=7, pattern="S[0-9]")
