@@ -13,7 +13,7 @@ def hello():
 def get_users():
     return users
 
-@app.get("/api/users/health")
+@app.get("/health")
 def health():
     return {"status": "ok"}
 
@@ -46,6 +46,3 @@ def delete_user(user_id: int):
             users.remove(u)
             return
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-
-
