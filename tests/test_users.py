@@ -22,6 +22,11 @@ def test_bad_student_id_422(client, bad_sid):
     r = client.post("/api/users", json=user_payload(uid=3, sid=bad_sid))
     assert r.status_code == 422 # pydantic validation error
 
+@pytest.mark.parametrize("bad_email", ["fakeEmai", "FakeEmail1", "@email"])
+def test_bad_email_422(client, bad_email):
+    r = client.post("/api/users", json=user_payload(uid=3, email=bad_email))
+    assert r.status_code == 422 # pydantic validation error
+
 def test_get_user_404(client):
     r = client.get("/api/users/999")
     assert r.status_code == 404
@@ -32,3 +37,14 @@ def test_delete_then_404(client):
     assert r1.status_code == 204
     r2 = client.delete("/api/users/10")
     assert r2.status_code == 404
+
+def test_put_200_404(client):
+    client.post("/api/users", json=user_payload(uid=10))
+    result = client.put("/api/users",json=user_payload(uid=10, name="Jim"))
+    assert result.status_code == 200
+    
+
+def test_put_404(client):
+    client.post("/api/users", json=user_payload(uid=10))
+    result = client.put("/api/users",json=user_payload(uid=4, name="Jim"))
+    assert result.status_code == 404

@@ -31,10 +31,10 @@ def add_user(user: User):
     users.append(user)
     return user
 
-@app.put("/api/users/", status_code=status.HTTP_201_CREATED)
+@app.put("/api/users", status_code=200)
 def update_user(user: User):
     for u in users:
-        if(u.user_id == user.user_id):
+        if u.user_id == user.user_id:
             users[users.index(u)] = user 
             return user
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
