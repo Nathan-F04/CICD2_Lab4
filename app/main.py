@@ -35,7 +35,6 @@ def add_user(user: User):
 def edit_user(user_id: int, user: User):
     for i, u in enumerate(users):
         if u.user_id == user_id:
-            # Update fields in place
             users[i].name = user.name
             users[i].email = user.email
             users[i].age = user.age
