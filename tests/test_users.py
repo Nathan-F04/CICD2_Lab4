@@ -1,5 +1,4 @@
 import pytest
-from conftests import client
 
 def user_payload(uid=1, name="Paul", email="pl@atu.ie", age=25, sid="S1234567"):
     return {"user_id": uid, "name": name, "email": email, "age": age, "student_id":sid}
@@ -39,12 +38,12 @@ def test_delete_then_404(client):
     assert r2.status_code == 404
 
 def test_put_200(client):
-    client.post("/api/users", json=user_payload())
+    client.post("/api/users/1", json=user_payload())
     result = client.put("/api/users/1",json=user_payload(name="Jim"))
     assert result.status_code == 200
-    
 
 def test_put_404(client):
-    client.post("/api/users", json=user_payload())
-    result = client.put("/api/users/2",json=user_payload(name="Joe"))
+    client.post("/api/users/1", json=user_payload())
+    result = client.put("/api/users/3",json=user_payload(name="Joe"))
     assert result.status_code == 404
+    assert result.json()["detail"] == "User not found"
