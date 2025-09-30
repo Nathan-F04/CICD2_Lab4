@@ -1,4 +1,4 @@
-from conftests import client
+from tests.conftest import client
 
 def test_health(client):
     r = client.get("/health")

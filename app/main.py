@@ -31,12 +31,16 @@ def add_user(user: User):
     users.append(user)
     return user
 
-@app.put("/api/users/{user_id}", status_code=200)
-def update_user(user_id: int, user: User):
-    for i,u in enumerate(users):
+@app.put("/api/users/{user_id}")
+def edit_user(user_id: int, user: User):
+    for i, u in enumerate(users):
         if u.user_id == user_id:
-            users[i] = user 
-            return user
+            users[i].name = user.name
+            users[i].email = user.email
+            users[i].age = user.age
+            users[i].student_id = user.student_id
+            return users[i]
+        
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 @app.delete("/api/users/{user_id}", status_code=204)
