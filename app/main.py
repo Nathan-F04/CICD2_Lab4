@@ -19,6 +19,7 @@ def health():
 
 @app.get("/api/users/{user_id}")
 def get_user(user_id: int):
+    #loop users until an id matches
     for u in users:
         if u.user_id == user_id:
             return u
@@ -26,6 +27,7 @@ def get_user(user_id: int):
     
 @app.post("/api/users", status_code=status.HTTP_201_CREATED)
 def add_user(user: User):
+    #checks the user object id matches for any object
     if any(u.user_id == user.user_id for u in users):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="user_id already exists")
     users.append(user)
@@ -33,8 +35,10 @@ def add_user(user: User):
 
 @app.put("/api/users/{user_id}")
 def edit_user(user_id: int, user: User):
+    #Compare the object at each index to see matching id
     for i, u in enumerate(users):
         if u.user_id == user_id:
+            #Once they match change the attributes at the index
             users[i].name = user.name
             users[i].email = user.email
             users[i].age = user.age
@@ -44,8 +48,10 @@ def edit_user(user_id: int, user: User):
 
 @app.delete("/api/users/{user_id}", status_code=204)
 def delete_user(user_id: int):
+    #Scans each user object in list
     for u in users:
         if(u.user_id == user_id):
+            #Upon matching id passed with user object id, the user is removed
             users.remove(u)
             return
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
