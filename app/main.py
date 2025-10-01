@@ -40,7 +40,6 @@ def edit_user(user_id: int, user: User):
             users[i].age = user.age
             users[i].student_id = user.student_id
             return users[i]
-        
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 @app.delete("/api/users/{user_id}", status_code=204)
