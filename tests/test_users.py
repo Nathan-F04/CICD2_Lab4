@@ -1,8 +1,14 @@
+#test_users.py
 import pytest
+
+#import users to clear the list
 from app.main import users
+
+#Payload to pass as default object
 def user_payload(uid=1, name="Paul", email="pl@atu.ie", age=25, sid="S1234567"):
     return {"user_id": uid, "name": name, "email": email, "age": age, "student_id":sid}
 
+#Tests below
 def test_create_user_ok(client):
     users.clear()
     result = client.post("/api/users", json=user_payload())
