@@ -11,8 +11,7 @@ class UserDB(Base):
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     age: Mapped[int] = mapped_column(Integer, nullable=False)
     student_id: Mapped[str] = mapped_column(unique=True, nullable=False)
-    projects: Mapped[list["ProjectDB"]] = relationship(back_populates="owner", cascade="all, 
-    delete-orphan")
+    projects: Mapped[list["ProjectDB"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
 
 # A) Related table (one-to-many relationship with UserDB -one user could have many projects)
 class ProjectDB(Base):

@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict, StringConstraints
 
 # ---------- Reusable type aliases ----------
 NameStr = Annotated[str, StringConstraints(min_length=1, max_length=100)]
-StudentId = Annotated[str, StringConstraints(pattern=r"^S\d{7}$")]
+StudentIdStr = Annotated[str, StringConstraints(pattern=r"^S\d{7}$")]
 CodeStr = Annotated[str, StringConstraints(min_length=1, max_length=32)]
 CourseNameStr = Annotated[str, StringConstraints(min_length=1, max_length=255)]
 ProjectNameStr = Annotated[str, StringConstraints(min_length=1, max_length=255)]
@@ -28,6 +28,21 @@ class UserRead(BaseModel):
     student_id: StudentIdStr
     # Optionally return users with their projects
 
+class UserPut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: NameStr
+    email: EmailStr
+    age: AgeInt
+    student_id: StudentIdStr
+    # Optionally return users with their projects
+
+class UserPartialUpdate(BaseModel):
+    name: Optional[NameStr] = None
+    email: Optional[EmailStr] = None
+    age: Optional[AgeInt] = None
+    student_id: Optional[StudentIdStr] = None
+
 class ProjectRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -37,6 +52,11 @@ class ProjectRead(BaseModel):
 
 class UserReadWithProjects(UserRead):
     projects: List[ProjectRead] = []
+
+class ProjectPartialUpdate(BaseModel):
+    name: Optional[ProjectNameStr] = None
+    description: Optional[DescStr] = None
+    owner_id: Optional[int] = None
 
 # ---------- Projects ----------
 # Flat route: POST /api/projects (owner_id in body)
