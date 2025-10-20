@@ -7,9 +7,9 @@ from sqlalchemy.orm import selectinload
 from .database import engine, SessionLocal
 from .models import Base, UserDB, CourseDB, ProjectDB
 from .schemas import (
-    UserCreate, UserRead,
+    UserCreate, UserRead, UserPartialUpdate,
     CourseCreate, CourseRead,
-    ProjectCreate, ProjectRead,
+    ProjectCreate, ProjectRead, ProjectPartialUpdate,
     ProjectReadWithOwner, ProjectCreateForUser
 )
 
@@ -72,8 +72,7 @@ def list_projects(db: Session = Depends(get_db)):
 
 @app.get("/api/projects/{project_id}", response_model=ProjectReadWithOwner)
 def get_project_with_owner(project_id: int, db: Session = Depends(get_db)):
-    stmt = select(ProjectDB).where(ProjectDB.id ==
-project_id).options(selectinload(ProjectDB.owner))
+    stmt = select(ProjectDB).where(ProjectDB.id ==project_id).options(selectinload(ProjectDB.owner))
     proj = db.execute(stmt).scalar_one_or_none()
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -106,20 +105,41 @@ Depends(get_db)):
     db.refresh(proj)
     return proj
 
-@app.put("/api/users/{user_id}/projects", response_model=ProjectRead, status_code=status.HTTP_200_OK)
-def put_user(user_id: int, payload: ProjectRead, db: Session = Depends(get_db)):
-    projectIdCheck = db.get(ProjectDB, user_id)
+@app.put("/api/users/{project_id}/projects", response_model=ProjectRead, status_code=status.HTTP_200_OK)
+def put_project(user_id: int, payload: ProjectRead, db: Session = Depends(get_db)):
+    projectIdCheck = db.get(ProjectDB, project_id)
     if not projectIdCheck:
         raise HTTPException(status_code=404, detail="Project not found")
     projectNew = ProjectDB(**payload.model_dump())
     try:
-        stmt = update(ProjectDB).where(ProjectDB.id == user_id).values(id = projectNew.id, name=projectNew.name, email=projectNew.email, age=projectNew.age, student_id=projectNew.student_id)
+        stmt = update(ProjectDB).where(ProjectDB.id == user_id).values(id = projectNew.id, name=projectNew.name, description=projectNew.description, owner_id=projectNew.owner_id)
         db.execute(stmt)
         db.commit()
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="Project already exists")
     return userNew
+
+@app.patch("/api/users/{project_id}", response_model=ProjectRead)
+def partial_edit_project(project_id: int, payload: ProjectPartialUpdate, db: Session = Depends(get_db)):
+    # Get only fields that were sent (exclude unset means fields missing from request are ignored)
+    new_details = payload.model_dump(exclude_unset=True)
+    
+    if not new_details:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
+    user = db.get(ProjectDB, project_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Project not found")
+    try:
+        stmt = update(ProjectDB).where(ProjectDB.id == project_id).values(**new_details)
+        db.execute(stmt)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Conflict updating user")
+
+    updated_project = db.get(ProjectDB, project_id)
+    return updated_project
 
 @app.get("/api/users", response_model=list[UserRead])
 def list_users(db: Session = Depends(get_db)):
@@ -163,6 +183,27 @@ def put_user(user_id: int, payload: UserRead, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=409, detail="User already exists")
     return userNew
+
+@app.patch("/api/users/{user_id}", response_model=UserRead)
+def partial_edit_user(user_id: int, payload: UserPartialUpdate, db: Session = Depends(get_db)):
+    # Get only fields that were sent (exclude unset means fields missing from request are ignored)
+    new_details = payload.model_dump(exclude_unset=True)
+    
+    if not new_details:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
+    user = db.get(UserDB, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        stmt = update(UserDB).where(UserDB.id == user_id).values(**new_details)
+        db.execute(stmt)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Conflict updating user")
+
+    updated_user = db.get(UserDB, user_id)
+    return updated_user
 
 # DELETE a user (triggers ORM cascade -> deletes their projects too)
 @app.delete("/api/users/{user_id}", status_code=204)
