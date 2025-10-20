@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict, StringConstraints
 
 # ---------- Reusable type aliases ----------
 NameStr = Annotated[str, StringConstraints(min_length=1, max_length=100)]
-StudentId = Annotated[str, StringConstraints(pattern=r"^S\d{7}$")]
+StudentIdStr = Annotated[str, StringConstraints(pattern=r"^S\d{7}$")]
 CodeStr = Annotated[str, StringConstraints(min_length=1, max_length=32)]
 CourseNameStr = Annotated[str, StringConstraints(min_length=1, max_length=255)]
 ProjectNameStr = Annotated[str, StringConstraints(min_length=1, max_length=255)]
@@ -20,6 +20,15 @@ class UserCreate(BaseModel):
     student_id: StudentIdStr
 
 class UserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: NameStr
+    email: EmailStr
+    age: AgeInt
+    student_id: StudentIdStr
+    # Optionally return users with their projects
+
+class UserPut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     name: NameStr

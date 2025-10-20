@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Response
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -34,8 +35,7 @@ def health():
     return {"status": "ok"}
 
 #Courses
-@app.post("/api/courses", response_model=CourseRead, status_code=201, summary="You could add 
-details")
+@app.post("/api/courses", response_model=CourseRead, status_code=201, summary="You could add details")
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     db_course = CourseDB(**course.model_dump())
     db.add(db_course)
@@ -106,6 +106,21 @@ Depends(get_db)):
     db.refresh(proj)
     return proj
 
+@app.put("/api/users/{user_id}/projects", response_model=ProjectRead, status_code=status.HTTP_200_OK)
+def put_user(user_id: int, payload: ProjectRead, db: Session = Depends(get_db)):
+    projectIdCheck = db.get(ProjectDB, user_id)
+    if not projectIdCheck:
+        raise HTTPException(status_code=404, detail="Project not found")
+    projectNew = ProjectDB(**payload.model_dump())
+    try:
+        stmt = update(ProjectDB).where(ProjectDB.id == user_id).values(id = projectNew.id, name=projectNew.name, email=projectNew.email, age=projectNew.age, student_id=projectNew.student_id)
+        db.execute(stmt)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Project already exists")
+    return userNew
+
 @app.get("/api/users", response_model=list[UserRead])
 def list_users(db: Session = Depends(get_db)):
     stmt = select(UserDB).order_by(UserDB.id)
@@ -133,6 +148,21 @@ def add_user(payload: UserCreate, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=409, detail="User already exists")
     return user
+
+@app.put("/api/users/{user_id}", response_model=UserRead, status_code=status.HTTP_200_OK)
+def put_user(user_id: int, payload: UserRead, db: Session = Depends(get_db)):
+    userIdCheck = db.get(UserDB, user_id)
+    if not userIdCheck:
+        raise HTTPException(status_code=404, detail="User not found")
+    userNew = UserDB(**payload.model_dump())
+    try:
+        stmt = update(UserDB).where(UserDB.id == user_id).values(id = userNew.id, name=userNew.name, email=userNew.email, age=userNew.age, student_id=userNew.student_id)
+        db.execute(stmt)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="User already exists")
+    return userNew
 
 # DELETE a user (triggers ORM cascade -> deletes their projects too)
 @app.delete("/api/users/{user_id}", status_code=204)
