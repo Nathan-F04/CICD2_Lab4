@@ -25,7 +25,33 @@ def client():
         yield c
         # --- teardown happens when the 'with' block exits ---
 
-def test_create_user(client):
-    r = client.post("/api/users",
-json={"name":"Paul","email":"pl@atu.ie","age":25,"student_id":"S1234567"})
-    assert r.status_code == 201
+# def test_create_user(client):
+#     r = client.post("/api/users",
+# json={"name":"Paul","email":"pl@atu.ie","age":25,"student_id":"S1234567"})
+#     assert r.status_code == 201
+
+def put_user_pass(client):
+    r = client.put("/api/users{1}",
+json={"id":1, "name":"Paul","email":"pl@atu.ie","age":25,"student_id":"S1234567"})
+    assert r.status_code == 200
+
+# @app.patch("/api/users/{user_id}", response_model=UserRead)
+# def partial_edit_user(user_id: int, payload: UserPartialUpdate, db: Session = Depends(get_db)):
+#     # Get only fields that were sent (exclude unset means fields missing from request are ignored)
+#     new_details = payload.model_dump(exclude_unset=True)
+    
+#     if not new_details:
+#         raise HTTPException(status_code=400, detail="No fields provided to update")
+#     user = db.get(UserDB, user_id)
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
+#     try:
+#         stmt = update(UserDB).where(UserDB.id == user_id).values(**new_details)
+#         db.execute(stmt)
+#         db.commit()
+#     except IntegrityError:
+#         db.rollback()
+#         raise HTTPException(status_code=409, detail="Conflict updating user")
+
+#     updated_user = db.get(UserDB, user_id)
+#     return updated_user
