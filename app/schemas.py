@@ -38,6 +38,7 @@ class UserPut(BaseModel):
     # Optionally return users with their projects
 
 class UserPartialUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     name: Optional[NameStr] = None
     email: Optional[EmailStr] = None
     age: Optional[AgeInt] = None
