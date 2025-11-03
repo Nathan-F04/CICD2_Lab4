@@ -89,8 +89,7 @@ def get_user_projects(user_id: int, db: Session = Depends(get_db)):
     #return db.execute(stmt).scalars().all()
 
 @app.post("/api/users/{user_id}/projects", response_model=ProjectRead, status_code=201)
-def create_user_project(user_id: int, project: ProjectCreateForUser, db: Session =
-Depends(get_db)):
+def create_user_project(user_id: int, project: ProjectCreateForUser, db: Session = Depends(get_db)):
     user = db.get(UserDB, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -106,21 +105,21 @@ Depends(get_db)):
     return proj
 
 @app.put("/api/users/{project_id}/projects", response_model=ProjectRead, status_code=status.HTTP_200_OK)
-def put_project(user_id: int, payload: ProjectRead, db: Session = Depends(get_db)):
+def put_project(project_id: int, payload: ProjectRead, db: Session = Depends(get_db)):
     projectIdCheck = db.get(ProjectDB, project_id)
     if not projectIdCheck:
         raise HTTPException(status_code=404, detail="Project not found")
     projectNew = ProjectDB(**payload.model_dump())
     try:
-        stmt = update(ProjectDB).where(ProjectDB.id == user_id).values(id = projectNew.id, name=projectNew.name, description=projectNew.description, owner_id=projectNew.owner_id)
+        stmt = update(ProjectDB).where(ProjectDB.id == project_id).values(id = projectNew.id, name=projectNew.name, description=projectNew.description, owner_id=projectNew.owner_id)
         db.execute(stmt)
         db.commit()
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="Project already exists")
-    return userNew
+    return projectNew
 
-@app.patch("/api/users/{project_id}", response_model=ProjectRead)
+@app.patch("/api/users/projects/{project_id}", response_model=ProjectRead)
 def partial_edit_project(project_id: int, payload: ProjectPartialUpdate, db: Session = Depends(get_db)):
     # Get only fields that were sent (exclude unset means fields missing from request are ignored)
     new_details = payload.model_dump(exclude_unset=True)
@@ -184,26 +183,23 @@ def put_user(user_id: int, payload: UserRead, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="User already exists")
     return userNew
 
-@app.patch("/api/users/{user_id}", response_model=UserRead)
-def partial_edit_user(user_id: int, payload: UserPartialUpdate, db: Session = Depends(get_db)):
-    # Get only fields that were sent (exclude unset means fields missing from request are ignored)
-    new_details = payload.model_dump(exclude_unset=True)
-    
-    if not new_details:
-        raise HTTPException(status_code=400, detail="No fields provided to update")
-    user = db.get(UserDB, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+@app.patch("/api/users/{user_id}", response_model=UserRead, status_code=status.HTTP_200_OK)
+def patch_user(user_id: int, payload: UserPartialUpdate, db: Session = Depends(get_db)):
+    db_user = db.query(UserDB).filter(UserDB.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Item not found")
+ 
+    # Update only the fields provided
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
     try:
-        stmt = update(UserDB).where(UserDB.id == user_id).values(**new_details)
-        db.execute(stmt)
+        db.add(db_user)
         db.commit()
+        db.refresh(db_user)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Conflict updating user")
-
-    updated_user = db.get(UserDB, user_id)
-    return updated_user
+    return db_user
 
 # DELETE a user (triggers ORM cascade -> deletes their projects too)
 @app.delete("/api/users/{user_id}", status_code=204)
