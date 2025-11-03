@@ -104,7 +104,7 @@ def create_user_project(user_id: int, project: ProjectCreateForUser, db: Session
     db.refresh(proj)
     return proj
 
-@app.put("/api/users/{project_id}/projects", response_model=ProjectRead, status_code=status.HTTP_200_OK)
+@app.put("/api/users/project_put/{project_id}", response_model=ProjectRead, status_code=status.HTTP_200_OK)
 def put_project(project_id: int, payload: ProjectRead, db: Session = Depends(get_db)):
     projectIdCheck = db.get(ProjectDB, project_id)
     if not projectIdCheck:
@@ -119,26 +119,25 @@ def put_project(project_id: int, payload: ProjectRead, db: Session = Depends(get
         raise HTTPException(status_code=409, detail="Project already exists")
     return projectNew
 
-@app.patch("/api/users/projects/{project_id}", response_model=ProjectRead)
+@app.patch("/api/users/project_patch/{project_id}", response_model=ProjectRead)
 def partial_edit_project(project_id: int, payload: ProjectPartialUpdate, db: Session = Depends(get_db)):
     # Get only fields that were sent (exclude unset means fields missing from request are ignored)
-    new_details = payload.model_dump(exclude_unset=True)
-    
+    new_details = db.query(ProjectDB).filter(ProjectDB.id == project_id).first()
     if not new_details:
-        raise HTTPException(status_code=400, detail="No fields provided to update")
-    user = db.get(ProjectDB, project_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=404, detail="Item not found")
+ 
+    # Update only the fields provided
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(new_details, key, value)
     try:
-        stmt = update(ProjectDB).where(ProjectDB.id == project_id).values(**new_details)
-        db.execute(stmt)
+        db.add(new_details)
         db.commit()
+        db.refresh(new_details)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Conflict updating user")
+    return new_details
 
-    updated_project = db.get(ProjectDB, project_id)
-    return updated_project
 
 @app.get("/api/users", response_model=list[UserRead])
 def list_users(db: Session = Depends(get_db)):
